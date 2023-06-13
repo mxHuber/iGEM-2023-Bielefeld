@@ -22,6 +22,9 @@ data_file = open(sys.argv[2])
 fasta_string_2 = data_file.read()
 data_file.close()
 
+# TODO (max): remove fasta file info, so that only the sequence is still there
+# file info is displayed with a '>' or ';' character at the start
+
 # TODO (max): manually add triplets maybe?
 triplets_of_interest = []
 triplet_indices = []
