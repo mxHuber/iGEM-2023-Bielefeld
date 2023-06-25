@@ -2,9 +2,9 @@
 # Date:   20.06.2023
 
 import argparse
-import Bio
+from Bio.Blast import NCBIWWW
+from Bio import SeqIO
 import os
-import subprocess
 import time
 import csv
 import math
@@ -36,35 +36,42 @@ args = parser.parse_args()
 if not os.path.exists(args.file_path):
     parser.error("The file %s does not exist!" % arg)
 
-
 if not os.path.exists(args.file_path):
      os.makedirs(args.file_path)
     
 area_length = 100
 half_length = math.ceil(area_length / 2)
 
+db = SeqIO.index("GRCh38_latest_rna.fna", "fasta")
+
 triplet_score = []
 location_score = []
-
-print('\n')
-print(args.file_path)
-print('\n')
 
 with open(str(args.file_path), 'r') as csv_file:
     with open(str(args.mrna_path), 'r') as mrna:
         csv_reader = csv.reader(csv_file, delimiter=',')
         file_counter = 0
         for row in csv_reader:
-            row[2]
+            
+            if row[0] == "INDEX":
+                continue
+
             today = date.today()
-            output_name = str(args.output_path) + "br_" + str(today) + "_" + str(file_counter) + ".xml";
 
             triplet_area = ""
-            if len(row[0]) > half_length and len(row[0]) < len(mrna) - half_length:
-                triplet_area = mrna[row[0] - half_length : row[0] + half_length]
+            # TODO (max): test later
+            #if len(row[0]) > half_length and len(row[0]) < len(mrna) - half_length:
+            left_index = int(row[0]) - half_length
+            right_index = int(row[0]) + half_length
+            triplet_area = mrna[left_index:right_index]
             
-            cmd = "blastx -query " + triplet_area + " -db nr -out " + output_name + " -evalue 0.001 -outfmt 5"
-            subprocess.run(cmd, shell=True)
+            result_handle = NCBIWWW.qblast("blastx", "refseq_rna", triplet_area, db)
+            
+            output_file_name = str(args.output_path) + "br_" + str(today) + "_" + str(file_counter) + ".xml"
+
+            with open(output_file_name, "w") as output_handle:
+                output_handle.write(result_handle.read())
+
             file_counter = file_counter + 1
 
 # TODO: (high priority) blast triplet areas with all mRNA sequences found in humans
